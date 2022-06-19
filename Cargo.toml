@@ -1,0 +1,38 @@
+[package]
+name = "perekladach"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "perekladach"
+
+[dependencies]
+actix-web = "4.1.0"
+actix-web-httpauth = "0.6.0"
+sqlx = { version = "0.5.13", features = ["runtime-actix-rustls", "macros", "migrate", "time", "postgres"]}
+config = { version = "0.13.1", default-features = false, features = ["yaml"] }
+secrecy = { version = "0.8.0", features = ["serde"] }
+argon2 = "0.4.0"
+password-hash = { version = "0.4.1", features = ["std"] }
+base64 = "0.13.0"
+rand = "0.8.5"
+uuid = { version = "1.1.2", features = ["v4"] }
+serde = "1.0.137"
+serde-aux = "3.0.1"
+serde_json = "1.0.81"
+anyhow = "1.0.57"
+thiserror = "1.0.31"
+language-tags = { version = "0.3.2", features = ["serde"] }
+
+[dev-dependencies]
+tokio = { version = "1.19.2", features = ["rt", "macros"]}
+reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls", "json"]}
+fake = { version = "2.5.0", features = ["derive"] }
+url = { version = "2.2.2", features = ["serde"] }
+
+[profile.dev.package.sqlx-macros]
+opt-level = 3
