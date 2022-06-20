@@ -1,13 +1,14 @@
 pub mod login;
 pub mod logout;
 
-use crate::auth::{Password, Username};
+use crate::auth::Password;
+use crate::database::user::{InsertableUser, Username};
+use crate::database::InsertError;
 use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 use sqlx::PgPool;
 use std::borrow::Cow;
-use crate::utils::postgres_error_codes::UNIQUE_VIOLATION;
 
 #[derive(Deserialize)]
 pub struct SignupData {
@@ -24,23 +25,15 @@ pub async fn new_user(
         .compute_hash()
         .map_err(ErrorInternalServerError)?;
 
-    sqlx::query!(
-        r#"
-        INSERT INTO users (username, password_hash)
-        VALUES ($1, $2);
-        "#,
-        data.username.inner(),
-        password_hash
-    )
-    .execute(db_pool.get_ref())
+    InsertableUser {
+        username: data.into_inner().username,
+        password_hash,
+    }
+    .insert(db_pool.get_ref())
     .await
     .map_err(|err| match err {
-        sqlx::Error::Database(db_error)
-            if db_error.code() == Some(Cow::Borrowed(UNIQUE_VIOLATION)) =>
-        {
-            ErrorBadRequest(db_error)
-        }
-        _ => ErrorInternalServerError(err),
+        InsertError::UniqueViolation(e) => ErrorBadRequest(e),
+        InsertError::Other(e) => ErrorInternalServerError(e),
     })?;
 
     Ok(HttpResponse::Created().finish())

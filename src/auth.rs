@@ -6,33 +6,16 @@ use rand::{thread_rng, Rng};
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 
-const USERNAME_MAX_LENGTH: usize = 32;
 const PASSWORD_MIN_LENGTH: usize = 8;
 const PASSWORD_MAX_LENGTH: usize = 64;
 
 #[derive(Deserialize)]
 #[serde(try_from = "String")]
-pub struct Username(String);
-
-#[derive(Deserialize)]
-#[serde(try_from = "String")]
 pub struct Password(Secret<String>);
-
-#[derive(Debug, Clone)]
-pub struct AuthToken {
-    pub token: String,
-    pub user_id: i32,
-}
 
 pub fn gen_auth_token() -> String {
     let token: [u8; 30] = thread_rng().gen();
     base64::encode(&token)
-}
-
-impl Username {
-    pub fn inner(&self) -> &str {
-        &self.0
-    }
 }
 
 impl Password {
@@ -56,18 +39,6 @@ impl Password {
 
     pub fn inner(&self) -> &Secret<String> {
         &self.0
-    }
-}
-
-impl TryFrom<String> for Username {
-    type Error = anyhow::Error;
-
-    fn try_from(username: String) -> Result<Self, Self::Error> {
-        if username.len() > USERNAME_MAX_LENGTH {
-            bail!("Username is too long");
-        }
-
-        Ok(Username(username))
     }
 }
 

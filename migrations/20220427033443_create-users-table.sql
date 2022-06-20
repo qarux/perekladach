@@ -13,6 +13,6 @@ CREATE TABLE authorization_tokens(
 CREATE TABLE projects(
     slug TEXT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
-    source_lang TEXT NOT NULL,
-    target_lang TEXT NOT NULL
+    source_language TEXT NOT NULL,
+    target_language TEXT NOT NULL
 );

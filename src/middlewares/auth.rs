@@ -1,4 +1,5 @@
-use crate::auth::AuthToken;
+use crate::database::token::Token;
+use crate::database::SelectError;
 use actix_web::dev::ServiceRequest;
 use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::web::Data;
@@ -13,24 +14,13 @@ pub async fn validator(
     let db_pool = req
         .app_data::<Data<PgPool>>()
         .ok_or(ErrorInternalServerError(""))?;
-    let record = sqlx::query!(
-        r#"
-        SELECT user_id
-        FROM authorization_tokens
-        WHERE token = $1
-        "#,
-        credentials.token()
-    )
-    .fetch_one(db_pool.get_ref())
-    .await
-    .map_err(|e| match e {
-        sqlx::Error::RowNotFound => ErrorBadRequest(e),
-        _ => ErrorInternalServerError(e),
-    })?;
-    req.extensions_mut().insert(AuthToken {
-        token: credentials.token().to_owned(),
-        user_id: record.user_id,
-    });
+    let token = Token::get(credentials.token(), db_pool.get_ref())
+        .await
+        .map_err(|err| match err {
+            SelectError::NoDataFound(e) => ErrorBadRequest(e),
+            SelectError::Other(e) => ErrorInternalServerError(e),
+        })?;
 
+    req.extensions_mut().insert(token);
     Ok(req)
 }

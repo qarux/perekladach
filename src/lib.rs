@@ -4,4 +4,4 @@ pub mod routes;
 pub mod startup;
 pub mod middlewares;
 pub mod slug;
-pub mod utils;
+pub mod database;

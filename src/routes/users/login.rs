@@ -1,5 +1,9 @@
 use crate::auth;
-use crate::auth::{Password, Username};
+use crate::auth::Password;
+use crate::database::token::Token;
+use crate::database::user::{User, Username};
+use crate::database::{InsertError, SelectError};
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::http::StatusCode;
 use actix_web::{web, ResponseError};
 use password_hash::PasswordHash;
@@ -12,14 +16,6 @@ pub struct Credentials {
     password: Password,
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum LoginError {
-    #[error("Invalid username or password")]
-    InvalidCredentials,
-    #[error("Internal server error")]
-    InternalError(#[source] anyhow::Error),
-}
-
 #[derive(Serialize)]
 pub struct Response {
     token: String,
@@ -28,48 +24,31 @@ pub struct Response {
 pub async fn login(
     db_pool: web::Data<PgPool>,
     data: web::Json<Credentials>,
-) -> Result<web::Json<Response>, LoginError> {
-    let user = sqlx::query!(
-        r#"
-        SELECT id, password_hash
-        FROM users
-        WHERE username = $1
-        "#,
-        data.username.inner(),
-    )
-    .fetch_one(db_pool.get_ref())
-    .await
-    .map_err(|e| match e {
-        Error::RowNotFound => LoginError::InvalidCredentials,
-        _ => LoginError::InternalError(e.into()),
-    })?;
+) -> actix_web::Result<web::Json<Response>> {
+    let data = data.into_inner();
+    let user = User::get_by_username(data.username, db_pool.get_ref())
+        .await
+        .map_err(|err| match err {
+            SelectError::NoDataFound(e) => ErrorBadRequest(e),
+            SelectError::Other(e) => ErrorInternalServerError(e),
+        })?;
+
     let hash =
-        PasswordHash::new(&user.password_hash).map_err(|e| LoginError::InternalError(e.into()))?;
-
+        PasswordHash::new(&user.password_hash).map_err(|err| ErrorInternalServerError(err))?;
     if !data.password.matches_hash(hash) {
-        return Err(LoginError::InvalidCredentials);
+        return Err(ErrorBadRequest("invalid credentials"));
     }
+
     let token = auth::gen_auth_token();
-    sqlx::query!(
-        r#"
-        INSERT INTO authorization_tokens (token, user_id)
-        VALUES ($1, $2);
-        "#,
-        token,
-        user.id
-    )
-    .execute(db_pool.get_ref())
-    .await
-    .map_err(|e| LoginError::InternalError(e.into()))?;
-
-    Ok(web::Json(Response { token }))
-}
-
-impl ResponseError for LoginError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            LoginError::InvalidCredentials => StatusCode::BAD_REQUEST,
-            LoginError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        }
+    Token {
+        token: token.clone(),
+        user_id: user.id,
     }
+    .insert(db_pool.get_ref())
+    .await
+    .map_err(|err| match err {
+        InsertError::UniqueViolation(e) => ErrorBadRequest(e),
+        InsertError::Other(e) => ErrorInternalServerError(e),
+    })?;
+    Ok(web::Json(Response { token }))
 }
