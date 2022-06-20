@@ -1,6 +1,6 @@
 use crate::middlewares;
 use crate::routes::logout::logout;
-use crate::routes::{login::login, new_project, new_user, project};
+use crate::routes::{all_projects, login::login, new_project, new_user, project};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
@@ -28,9 +28,10 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, anyhow::Err
                     .wrap(HttpAuthentication::bearer(middlewares::auth::validator))
                     .service(
                         web::scope("/projects")
+                            .route("", web::get().to(all_projects))
                             .route("", web::post().to(new_project))
-                            .service(project)
-                    )
+                            .service(project),
+                    ),
             )
             .app_data(db_pool.clone())
     })

@@ -1,4 +1,4 @@
-use crate::database::project::Project;
+use crate::database::project::{InsertableProject, Project};
 use crate::database::{InsertError, SelectError};
 use crate::slug::Slug;
 use actix_web::error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound};
@@ -10,7 +10,7 @@ use std::borrow::Cow;
 
 pub async fn new_project(
     db_pool: web::Data<PgPool>,
-    payload: web::Json<Project>,
+    payload: web::Json<InsertableProject>,
 ) -> actix_web::Result<HttpResponse> {
     payload
         .into_inner()
@@ -37,4 +37,12 @@ pub async fn project(
         })?;
 
     Ok(web::Json(project))
+}
+
+pub async fn all_projects(db_pool: web::Data<PgPool>) -> actix_web::Result<impl Responder> {
+    let projects = Project::get_all(db_pool.get_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    Ok(web::Json(projects))
 }

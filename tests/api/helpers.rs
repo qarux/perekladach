@@ -38,10 +38,9 @@ pub struct User {
 pub struct Project {
     pub slug: String,
     pub name: String,
-    pub icon_url: Option<Url>,
     pub source_language: String,
     pub target_language: String,
-    pub chapters: u32,
+    pub chapters_count: u32,
     pub translation_progress: f32,
 }
 
