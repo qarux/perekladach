@@ -54,16 +54,18 @@ pub struct CreateProjectRequestData {
 
 #[derive(Debug, Deserialize)]
 pub struct Chapter {
-    pub title: String,
-    pub project_name: String,
     pub index: f32,
-    pub translation_progress: f32,
+    pub title: String,
+    pub page_count: u32,
+    translation_progress: f32,
+    project_slug: String,
 }
 
-#[derive(Debug, Serialize, Dummy)]
+#[derive(Debug, Serialize)]
 pub struct CreateChapterRequestData {
-    #[dummy(faker = "Title()")]
+    pub index: Option<f32>,
     pub title: String,
+    pub project_slug: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -172,13 +174,13 @@ impl AuthenticatedApp {
     pub async fn post_chapter(
         &self,
         data: &CreateChapterRequestData,
-        project_name: &str,
+        project_slug: &str,
     ) -> Response {
         self.app
             .api_client
             .post(&format!(
                 "{}/projects/{}/chapters",
-                self.app.address, project_name
+                self.app.address, project_slug
             ))
             .json(data)
             .send()
@@ -224,7 +226,8 @@ impl AuthenticatedApp {
 
     pub async fn create_project(&self) -> CreateProjectRequestData {
         let data = CreateProjectRequestData {
-            slug: StringFaker::with(Vec::from("0123456789abcdefghijklmnopqrstuvwxyz"), 8..12).fake(),
+            slug: StringFaker::with(Vec::from("0123456789abcdefghijklmnopqrstuvwxyz"), 8..12)
+                .fake(),
             name: Title().fake(),
             // TODO Fake language codes
             source_language: "jp".to_string(),
@@ -236,9 +239,13 @@ impl AuthenticatedApp {
         data
     }
 
-    pub async fn create_chapter(&self, project_name: &str) -> CreateChapterRequestData {
-        let data: CreateChapterRequestData = Faker.fake();
-        let response = self.post_chapter(&data, project_name).await;
+    pub async fn create_chapter(&self, project_slug: &str) -> CreateChapterRequestData {
+        let data = CreateChapterRequestData {
+            index: None,
+            title: Title().fake(),
+            project_slug: project_slug.to_owned(),
+        };
+        let response = self.post_chapter(&data, project_slug).await;
         assert_eq!(response.status(), StatusCode::CREATED);
 
         data

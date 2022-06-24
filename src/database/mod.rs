@@ -5,6 +5,7 @@ use thiserror::Error;
 pub mod token;
 pub mod user;
 pub mod project;
+pub mod chapter;
 
 const UNIQUE_VIOLATION: &str = "23505";
 

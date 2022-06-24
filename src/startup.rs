@@ -1,7 +1,10 @@
 use crate::middlewares;
 use crate::routes::logout::logout;
-use crate::routes::{all_projects, login::login, new_project, new_user, project};
+use crate::routes::{
+    all_projects, chapters, login::login, new_chapter, new_project, new_user, project,
+};
 use actix_web::dev::Server;
+use actix_web::web::service;
 use actix_web::{web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::PgPool;
@@ -30,7 +33,17 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, anyhow::Err
                         web::scope("/projects")
                             .route("", web::get().to(all_projects))
                             .route("", web::post().to(new_project))
-                            .service(project),
+                            .service(project)
+                            .service(
+                                web::scope("/{project_slug}/chapters")
+                                    .route("", web::get().to(chapters))
+                                    .route("", web::post().to(new_chapter)),
+                            ),
+                    )
+                    .service(
+                        web::scope("/chapters")
+                            .route("/{project_slug}", web::get().to(chapters))
+                            .route("", web::post().to(new_chapter)),
                     ),
             )
             .app_data(db_pool.clone())

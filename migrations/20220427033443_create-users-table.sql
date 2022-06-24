@@ -16,3 +16,10 @@ CREATE TABLE projects(
     source_language TEXT NOT NULL,
     target_language TEXT NOT NULL
 );
+
+CREATE TABLE chapters(
+    index REAL NOT NULL,
+    title TEXT NOT NULL,
+    project_slug TEXT NOT NULL REFERENCES projects (slug) ON DELETE CASCADE,
+    PRIMARY KEY(index, project_slug)
+);
