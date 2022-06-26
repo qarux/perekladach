@@ -2,6 +2,7 @@ use crate::middlewares;
 use crate::routes::logout::logout;
 use crate::routes::{
     all_projects, chapters, login::login, new_chapter, new_project, new_user, project,
+    source_image, translated_image,
 };
 use actix_web::dev::Server;
 use actix_web::web::service;
@@ -44,6 +45,12 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, anyhow::Err
                         web::scope("/chapters")
                             .route("/{project_slug}", web::get().to(chapters))
                             .route("", web::post().to(new_chapter)),
+                    )
+                    .service(
+                        web::scope("/pages")
+                            // TODO
+                            .route("/{uuid}/source", web::get().to(source_image))
+                            .route("/{uuid}/translated", web::get().to(translated_image)),
                     ),
             )
             .app_data(db_pool.clone())

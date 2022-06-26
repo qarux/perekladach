@@ -13,14 +13,18 @@ name = "perekladach"
 [dependencies]
 actix-web = "4.1.0"
 actix-web-httpauth = "0.6.0"
-sqlx = { version = "0.5.13", features = ["runtime-actix-rustls", "macros", "migrate", "time", "postgres"]}
+actix-files = "0.6.1"
+actix-multipart = "0.4.0"
+sqlx = { version = "0.5.13", features = ["runtime-actix-rustls", "macros", "migrate", "time", "postgres", "uuid"]}
+tokio = { version = "1.19.2", features = ["fs"]}
+futures = "0.3.21"
 config = { version = "0.13.1", default-features = false, features = ["yaml"] }
 secrecy = { version = "0.8.0", features = ["serde"] }
 argon2 = "0.4.0"
 password-hash = { version = "0.4.1", features = ["std"] }
 base64 = "0.13.0"
 rand = "0.8.5"
-uuid = { version = "1.1.2", features = ["v4"] }
+uuid = { version = "1.1.2", features = ["v4", "serde"] }
 serde = "1.0.137"
 serde-aux = "3.0.1"
 serde_json = "1.0.81"

@@ -23,3 +23,12 @@ CREATE TABLE chapters(
     project_slug TEXT NOT NULL REFERENCES projects (slug) ON DELETE CASCADE,
     PRIMARY KEY(index, project_slug)
 );
+
+CREATE TABLE pages(
+    uuid UUID NOT NULL PRIMARY KEY,
+    number INTEGER NOT NULL,
+    translated BOOLEAN DEFAULT false NOT NULL,
+    project_slug TEXT NOT NULL,
+    chapter_index REAL NOT NULL,
+    FOREIGN KEY (project_slug, chapter_index) REFERENCES chapters (project_slug, index)
+);

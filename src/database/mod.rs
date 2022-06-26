@@ -6,6 +6,8 @@ pub mod token;
 pub mod user;
 pub mod project;
 pub mod chapter;
+pub mod page;
+mod storage;
 
 const UNIQUE_VIOLATION: &str = "23505";
 
